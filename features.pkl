@@ -1,0 +1,14 @@
+# Convert input to DataFrame
+input_df = pd.DataFrame([input_dict])
+
+# Apply Label Encoding
+for col in encoders:
+    if col != "Loan_Status":
+        input_df[col] = encoders[col].transform(input_df[col])
+
+# 🔥 IMPORTANT FIX
+# Match column order with model training
+input_df = input_df[model.feature_names_in_]
+
+# Predict
+prediction = model.predict(input_df)
