@@ -3,21 +3,14 @@ import joblib
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 
-# -------------------------------
-# Load Dataset
-# -------------------------------
 df = pd.read_csv("loan_data.csv")
 
-# -------------------------------
-# Drop unnecessary column
-# -------------------------------
+# Drop ID column
 df = df.drop("Loan_ID", axis=1)
 
 # -------------------------------
-# Encode categorical columns
+# Clean categorical columns FIRST
 # -------------------------------
-label_encoders = {}
-
 categorical_cols = [
     "Gender",
     "Married",
@@ -29,26 +22,28 @@ categorical_cols = [
 ]
 
 for col in categorical_cols:
+    df[col] = df[col].astype(str).str.strip().str.lower()
+
+# -------------------------------
+# Apply Label Encoding
+# -------------------------------
+label_encoders = {}
+
+for col in categorical_cols:
     le = LabelEncoder()
     df[col] = le.fit_transform(df[col])
     label_encoders[col] = le
 
-# -------------------------------
-# Split Features & Target
-# -------------------------------
+# Split
 X = df.drop("Loan_Status", axis=1)
 y = df["Loan_Status"]
 
-# -------------------------------
-# Train Model
-# -------------------------------
+# Train
 model = RandomForestClassifier()
 model.fit(X, y)
 
-# -------------------------------
-# Save Model & Encoders
-# -------------------------------
+# Save
 joblib.dump(model, "loan_prediction_model.pkl")
 joblib.dump(label_encoders, "encoders.pkl")
 
-print("Model trained and saved successfully!")
+print("Model trained successfully!")
