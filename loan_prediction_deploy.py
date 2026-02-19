@@ -11,22 +11,17 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# -------------------------------
-# Load Model & Encoders
-# -------------------------------
+# Load model
 try:
     model = joblib.load("loan_prediction_model.pkl")
-    encoders = joblib.load("label_encoder.pkl")
 except Exception as e:
-    st.error(f"Loading failed: {e}")
+    st.error(f"Model loading failed: {e}")
     st.stop()
 
 st.title("Loan Prediction App")
 st.subheader("Enter Applicant Details")
 
-# -------------------------------
-# User Inputs
-# -------------------------------
+# Inputs
 gender = st.selectbox("Gender", ["Male", "Female"])
 married = st.selectbox("Married", ["Yes", "No"])
 dependents = st.selectbox("Dependents", ["0", "1", "2", "3+"])
@@ -39,54 +34,25 @@ loan_term = st.number_input("Loan Amount Term", min_value=0)
 credit_history = st.selectbox("Credit History", [1.0, 0.0])
 property_area = st.selectbox("Property Area", ["Urban", "Semiurban", "Rural"])
 
-# -------------------------------
-# Prediction
-# -------------------------------
 if st.button("Predict"):
 
-    try:
-        # Encode inputs using saved encoders
-        gender_val = encoders["Gender"].transform([gender.lower().strip()])[0]
-        married_val = encoders["Married"].transform([married.lower().strip()])[0]
-        dependents_val = encoders["Dependents"].transform([dependents.lower().strip()])[0]
-        education_val = encoders["Education"].transform([education.lower().strip()])[0]
-        self_employed_val = encoders["Self_Employed"].transform([self_employed.lower().strip()])[0]
-        property_val = encoders["Property_Area"].transform([property_area.lower().strip()])[0]
+    input_data = pd.DataFrame([{
+        "Gender": gender,
+        "Married": married,
+        "Dependents": dependents,
+        "Education": education,
+        "Self_Employed": self_employed,
+        "ApplicantIncome": applicant_income,
+        "CoapplicantIncome": coapplicant_income,
+        "LoanAmount": loan_amount,
+        "Loan_Amount_Term": loan_term,
+        "Credit_History": credit_history,
+        "Property_Area": property_area
+    }])
 
+    prediction = model.predict(input_data)
 
-        # Create dataframe in correct order
-        input_data = pd.DataFrame([[ 
-            gender_val,
-            married_val,
-            dependents_val,
-            education_val,
-            self_employed_val,
-            applicant_income,
-            coapplicant_income,
-            loan_amount,
-            loan_term,
-            credit_history,
-            property_val
-        ]], columns=[
-            "Gender",
-            "Married",
-            "Dependents",
-            "Education",
-            "Self_Employed",
-            "ApplicantIncome",
-            "CoapplicantIncome",
-            "LoanAmount",
-            "Loan_Amount_Term",
-            "Credit_History",
-            "Property_Area"
-        ])
-
-        prediction = model.predict(input_data)
-
-        if prediction[0] == 1:
-            st.success("Loan Approved ✅")
-        else:
-            st.error("Loan Not Approved ❌")
-
-    except Exception as e:
-        st.error(f"Prediction failed: {e}")
+    if prediction[0] == "Y" or prediction[0] == 1:
+        st.success("Loan Approved ✅")
+    else:
+        st.error("Loan Not Approved ❌")
