@@ -1,49 +1,56 @@
 import pandas as pd
 import joblib
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import LabelEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
 
+# Load dataset
 df = pd.read_csv("loan_data.csv")
 
 # Drop ID column
 df = df.drop("Loan_ID", axis=1)
 
-# -------------------------------
-# Clean categorical columns FIRST
-# -------------------------------
+# Split features & target
+X = df.drop("Loan_Status", axis=1)
+y = df["Loan_Status"]
+
+# Define categorical & numeric columns
 categorical_cols = [
     "Gender",
     "Married",
     "Dependents",
     "Education",
     "Self_Employed",
-    "Property_Area",
-    "Loan_Status"
+    "Property_Area"
 ]
 
-for col in categorical_cols:
-    df[col] = df[col].astype(str).str.strip().str.lower()
+numeric_cols = [
+    "ApplicantIncome",
+    "CoapplicantIncome",
+    "LoanAmount",
+    "Loan_Amount_Term",
+    "Credit_History"
+]
 
-# -------------------------------
-# Apply Label Encoding
-# -------------------------------
-label_encoders = {}
+# Preprocessing
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_cols)
+    ],
+    remainder="passthrough"
+)
 
-for col in categorical_cols:
-    le = LabelEncoder()
-    df[col] = le.fit_transform(df[col])
-    label_encoders[col] = le
-
-# Split
-X = df.drop("Loan_Status", axis=1)
-y = df["Loan_Status"]
+# Create pipeline
+model = Pipeline(steps=[
+    ("preprocessor", preprocessor),
+    ("classifier", RandomForestClassifier())
+])
 
 # Train
-model = RandomForestClassifier()
 model.fit(X, y)
 
-# Save
+# Save model
 joblib.dump(model, "loan_prediction_model.pkl")
-joblib.dump(label_encoders, "encoders.pkl")
 
 print("Model trained successfully!")
