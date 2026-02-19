@@ -13,7 +13,7 @@ import joblib
 
 # Load trained model and encoders
 model = joblib.load("loan_prediction_model (1).pkl")          # your saved model
-encoder = joblib.load("loan_prediction_model (1).pkl")      # your saved encoders dictionary
+encoder = joblib.load("label_encoder (1).pkl")      # your saved encoders dictionary
 
 st.title("🏦 Loan Approval Prediction App")
 
