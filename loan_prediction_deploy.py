@@ -12,8 +12,8 @@ import pandas as pd
 import pickle
 
 # Load saved files
-model = pickle.load(open("model.pkl", "rb"))
-encoders = pickle.load(open("encoders.pkl", "rb"))
+model = pickle.load(open("loan_prediction_model.pkl", "rb"))
+encoders = pickle.load(open("label_encoder.pkl", "rb"))
 feature_columns = pickle.load(open("features.pkl", "rb"))
 
 st.title("Loan Prediction App")
