@@ -11,15 +11,26 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# Load trained model and encoders
-# Note: Ensure these files are in the same directory as your app.py
+# 1. Load trained model and encoders
 model = joblib.load("loan_prediction_model (1).pkl")
 encoder = joblib.load("label_encoder (1).pkl")
 
-st.title("🏦 Loan Approval Prediction App")
-st.write("Enter applicant details to check loan approval status")
+# Get the exact feature names the model expects
+# This is the "secret sauce" to fix the ValueError
+try:
+    model_features = model.feature_names_in_
+except AttributeError:
+    # If your model version doesn't support feature_names_in_, 
+    # use the exact list from your training notebook:
+    model_features = [
+        "Gender", "Married", "Dependents", "Education", "Self_Employed", 
+        "ApplicantIncome", "CoapplicantIncome", "LoanAmount", 
+        "Loan_Amount_Term", "Credit_History", "Property_Area"
+    ]
 
-# User Inputs
+st.title("🏦 Loan Approval Prediction App")
+
+# 2. User Inputs
 gender = st.selectbox("Gender", encoder["Gender"].classes_)
 married = st.selectbox("Married", encoder["Married"].classes_)
 dependents = st.selectbox("Dependents", encoder["Dependents"].classes_)
@@ -33,7 +44,7 @@ loan_term = st.number_input("Loan Amount Term", min_value=0)
 credit_history = st.selectbox("Credit History", [1.0, 0.0])
 property_area = st.selectbox("Property Area", encoder["Property_Area"].classes_)
 
-# Create DataFrame - Ensure keys match the training data column names exactly
+# 3. Create DataFrame
 df = pd.DataFrame({
     "Gender": [gender],
     "Married": [married],
@@ -44,16 +55,19 @@ df = pd.DataFrame({
     "CoapplicantIncome": [coapp_income],
     "LoanAmount": [loan_amount],
     "Loan_Amount_Term": [loan_term],
-    "Credit_History": [float(credit_history)], # Converted to float to match common model types
+    "Credit_History": [float(credit_history)],
     "Property_Area": [property_area]
 })
 
-# Prediction logic
+# 4. Prediction Logic
 if st.button("Predict Loan Status"):
-    # FIX: Only encode columns that exist in BOTH the encoder and the input dataframe
+    # Encode categorical columns
     for col in encoder:
         if col in df.columns:
             df[col] = encoder[col].transform(df[col])
+    
+    # CRITICAL FIX: Reorder columns to match the model's training order
+    df = df[model_features]
 
     # Predict
     prediction = model.predict(df)
