@@ -12,27 +12,24 @@ import pandas as pd
 import joblib
 
 # 1. Load trained model and encoders
-model = joblib.load("loan_prediction_model (1).pkl")
-encoder = joblib.load("label_encoder (1).pkl")
-
-# Manually define the features in the EXACT order they were trained
-# I have removed 'Loan_Status' and 'Loan_ID' if they were there
-features_to_use = [
-    "Gender", "Married", "Dependents", "Education", "Self_Employed", 
-    "ApplicantIncome", "CoapplicantIncome", "LoanAmount", 
-    "Loan_Amount_Term", "Credit_History", "Property_Area"
-]
+# Using try-except to catch loading errors early
+try:
+    model = joblib.load("loan_prediction_model (1).pkl")
+    encoder = joblib.load("label_encoder (1).pkl")
+except Exception as e:
+    st.error(f"Error loading model files: {e}")
 
 st.title("🏦 Loan Approval Prediction App")
+st.write("Enter applicant details to check loan approval status")
 
 # 2. User Inputs
+# We use the encoder classes to ensure the options match the training data
 gender = st.selectbox("Gender", encoder["Gender"].classes_)
 married = st.selectbox("Married", encoder["Married"].classes_)
 dependents = st.selectbox("Dependents", encoder["Dependents"].classes_)
 education = st.selectbox("Education", encoder["Education"].classes_)
 self_employed = st.selectbox("Self_Employed", encoder["Self_Employed"].classes_)
 
-# Use the exact names used in the DataFrame below
 app_income = st.number_input("Applicant Income", min_value=0)
 coapp_income = st.number_input("Coapplicant Income", min_value=0)
 loan_amount = st.number_input("Loan Amount", min_value=0)
@@ -41,7 +38,7 @@ credit_history = st.selectbox("Credit History", [1.0, 0.0])
 property_area = st.selectbox("Property Area", encoder["Property_Area"].classes_)
 
 # 3. Create DataFrame
-# Ensure the keys here match the 'features_to_use' list above perfectly
+# Note: Ensure these keys match the names used in your training CSV
 df = pd.DataFrame({
     "Gender": [gender],
     "Married": [married],
@@ -62,15 +59,37 @@ if st.button("Predict Loan Status"):
     for col in encoder:
         if col in df.columns:
             df[col] = encoder[col].transform(df[col])
-    
-    # Select and order the features exactly as defined
-    # This prevents the KeyError by using our manual list
-    df_final = df[features_to_use]
 
-    # Predict
-    prediction = model.predict(df_final)
+    # --- CRITICAL FIX: FEATURE ALIGNMENT ---
+    try:
+        # Get the columns the model was trained on
+        model_features = model.feature_names_in_
+        
+        # Check for any columns the model wants that we don't have (like Loan_ID)
+        for feature in model_features:
+            if feature not in df.columns:
+                df[feature] = 0  # Fill missing columns with a neutral value
+        
+        # Reorder df to match the model's training order exactly
+        df_final = df[model_features]
 
-    if prediction[0] == 1:
-        st.success("✅ Loan Approved")
-    else:
-        st.error("❌ Loan Not Approved")
+        # Final Prediction
+        prediction = model.predict(df_final)
+
+        if prediction[0] == 1:
+            st.success("✅ Loan Approved")
+        else:
+            st.error("❌ Loan Not Approved")
+
+    except AttributeError:
+        # Fallback if the model doesn't have feature_names_in_ (older sklearn)
+        st.warning("Model does not store feature names. Predicting with current columns...")
+        prediction = model.predict(df)
+        if prediction[0] == 1:
+            st.success("✅ Loan Approved")
+        else:
+            st.error("❌ Loan Not Approved")
+            
+    except Exception as e:
+        st.error(f"An error occurred during prediction: {e}")
+        st.write("Current columns in app:", list(df.columns))
