@@ -9,50 +9,53 @@ Original file is located at
 
 import streamlit as st
 import pandas as pd
-import joblib
+import pickle
 
-# Load model
-try:
-    model = joblib.load("loan_prediction_model.pkl")
-except Exception as e:
-    st.error(f"Model loading failed: {e}")
-    st.stop()
+# Load saved files
+model = pickle.load(open("model.pkl", "rb"))
+encoders = pickle.load(open("encoders.pkl", "rb"))
+feature_columns = pickle.load(open("features.pkl", "rb"))
 
 st.title("Loan Prediction App")
-st.subheader("Enter Applicant Details")
 
-# Inputs
+# User Inputs
 gender = st.selectbox("Gender", ["Male", "Female"])
 married = st.selectbox("Married", ["Yes", "No"])
-dependents = st.selectbox("Dependents", ["0", "1", "2", "3+"])
 education = st.selectbox("Education", ["Graduate", "Not Graduate"])
 self_employed = st.selectbox("Self Employed", ["Yes", "No"])
-applicant_income = st.number_input("Applicant Income", min_value=0)
-coapplicant_income = st.number_input("Coapplicant Income", min_value=0)
-loan_amount = st.number_input("Loan Amount", min_value=0)
-loan_term = st.number_input("Loan Amount Term", min_value=0)
-credit_history = st.selectbox("Credit History", [1.0, 0.0])
+applicant_income = st.number_input("Applicant Income")
+loan_amount = st.number_input("Loan Amount")
 property_area = st.selectbox("Property Area", ["Urban", "Semiurban", "Rural"])
 
+# When Predict Button Clicked
 if st.button("Predict"):
 
-    input_data = pd.DataFrame([{
+    # Create dictionary
+    input_dict = {
         "Gender": gender,
         "Married": married,
-        "Dependents": dependents,
         "Education": education,
         "Self_Employed": self_employed,
         "ApplicantIncome": applicant_income,
-        "CoapplicantIncome": coapplicant_income,
         "LoanAmount": loan_amount,
-        "Loan_Amount_Term": loan_term,
-        "Credit_History": credit_history,
         "Property_Area": property_area
-    }])
+    }
 
-    prediction = model.predict(input_data)
+    # Convert to DataFrame
+    input_df = pd.DataFrame([input_dict])
 
-    if prediction[0] == "Y" or prediction[0] == 1:
+    # Apply Label Encoding
+    for col in encoders:
+        if col != "Loan_Status":
+            input_df[col] = encoders[col].transform(input_df[col])
+
+    # Reorder columns SAME as training
+    input_df = input_df[feature_columns]
+
+    # Predict
+    prediction = model.predict(input_df)
+
+    if prediction[0] == 1:
         st.success("Loan Approved ✅")
     else:
-        st.error("Loan Not Approved ❌")
+        st.error("Loan Rejected ❌")
