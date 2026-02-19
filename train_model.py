@@ -3,6 +3,8 @@ import pickle
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
+import sklearn
+print(sklearn.__version__)
 
 # Load dataset
 data = pd.read_csv("loan_data.csv")
