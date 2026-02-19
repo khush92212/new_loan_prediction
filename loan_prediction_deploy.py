@@ -12,12 +12,13 @@ import pandas as pd
 import joblib
 
 # -------------------------------
-# Load Model
+# Load Model & Encoders
 # -------------------------------
 try:
     model = joblib.load("loan_prediction_model.pkl")
+    encoders = joblib.load("encoders.pkl")
 except Exception as e:
-    st.error(f"Model loading failed: {e}")
+    st.error(f"Loading failed: {e}")
     st.stop()
 
 st.title("Loan Prediction App")
@@ -44,22 +45,15 @@ property_area = st.selectbox("Property Area", ["Urban", "Semiurban", "Rural"])
 if st.button("Predict"):
 
     try:
-        # Manual Encoding (Safe Method)
+        # Encode inputs using saved encoders
+        gender_val = encoders["Gender"].transform([gender])[0]
+        married_val = encoders["Married"].transform([married])[0]
+        dependents_val = encoders["Dependents"].transform([dependents])[0]
+        education_val = encoders["Education"].transform([education])[0]
+        self_employed_val = encoders["Self_Employed"].transform([self_employed])[0]
+        property_val = encoders["Property_Area"].transform([property_area])[0]
 
-        gender_val = 1 if gender == "Male" else 0
-        married_val = 1 if married == "Yes" else 0
-        education_val = 1 if education == "Graduate" else 0
-        self_employed_val = 1 if self_employed == "Yes" else 0
-        dependents_val = 3 if dependents == "3+" else int(dependents)
-
-        property_map = {
-            "Urban": 2,
-            "Semiurban": 1,
-            "Rural": 0
-        }
-
-        property_val = property_map[property_area]
-
+        # Create dataframe in correct order
         input_data = pd.DataFrame([[ 
             gender_val,
             married_val,
