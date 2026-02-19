@@ -15,18 +15,13 @@ import joblib
 model = joblib.load("loan_prediction_model (1).pkl")
 encoder = joblib.load("label_encoder (1).pkl")
 
-# Get the exact feature names the model expects
-# This is the "secret sauce" to fix the ValueError
-try:
-    model_features = model.feature_names_in_
-except AttributeError:
-    # If your model version doesn't support feature_names_in_, 
-    # use the exact list from your training notebook:
-    model_features = [
-        "Gender", "Married", "Dependents", "Education", "Self_Employed", 
-        "ApplicantIncome", "CoapplicantIncome", "LoanAmount", 
-        "Loan_Amount_Term", "Credit_History", "Property_Area"
-    ]
+# Manually define the features in the EXACT order they were trained
+# I have removed 'Loan_Status' and 'Loan_ID' if they were there
+features_to_use = [
+    "Gender", "Married", "Dependents", "Education", "Self_Employed", 
+    "ApplicantIncome", "CoapplicantIncome", "LoanAmount", 
+    "Loan_Amount_Term", "Credit_History", "Property_Area"
+]
 
 st.title("🏦 Loan Approval Prediction App")
 
@@ -37,6 +32,7 @@ dependents = st.selectbox("Dependents", encoder["Dependents"].classes_)
 education = st.selectbox("Education", encoder["Education"].classes_)
 self_employed = st.selectbox("Self_Employed", encoder["Self_Employed"].classes_)
 
+# Use the exact names used in the DataFrame below
 app_income = st.number_input("Applicant Income", min_value=0)
 coapp_income = st.number_input("Coapplicant Income", min_value=0)
 loan_amount = st.number_input("Loan Amount", min_value=0)
@@ -45,6 +41,7 @@ credit_history = st.selectbox("Credit History", [1.0, 0.0])
 property_area = st.selectbox("Property Area", encoder["Property_Area"].classes_)
 
 # 3. Create DataFrame
+# Ensure the keys here match the 'features_to_use' list above perfectly
 df = pd.DataFrame({
     "Gender": [gender],
     "Married": [married],
@@ -66,11 +63,12 @@ if st.button("Predict Loan Status"):
         if col in df.columns:
             df[col] = encoder[col].transform(df[col])
     
-    # CRITICAL FIX: Reorder columns to match the model's training order
-    df = df[model_features]
+    # Select and order the features exactly as defined
+    # This prevents the KeyError by using our manual list
+    df_final = df[features_to_use]
 
     # Predict
-    prediction = model.predict(df)
+    prediction = model.predict(df_final)
 
     if prediction[0] == 1:
         st.success("✅ Loan Approved")
