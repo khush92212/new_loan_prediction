@@ -12,24 +12,41 @@ import pandas as pd
 import pickle
 import os
 
-# -------- LOAD MODEL --------
+st.title("Loan Prediction App")
+
+# ---------- DEBUG: Show Files ----------
+st.write("Current Directory:", os.getcwd())
+st.write("Files in Directory:", os.listdir())
+
+# ---------- FILE PATHS ----------
 model_path = "loan_prediction_model.pkl"
 encoder_path = "label_encoder.pkl"
 
+# ---------- CHECK FILES ----------
 if not os.path.exists(model_path):
-    st.error("Model file not found!")
+    st.error("❌ Model file NOT FOUND!")
     st.stop()
 
 if not os.path.exists(encoder_path):
-    st.error("Encoder file not found!")
+    st.error("❌ Encoder file NOT FOUND!")
     st.stop()
 
-model = pickle.load(open(model_path, "rb"))
-encoders = pickle.load(open(encoder_path, "rb"))
+# ---------- LOAD FILES SAFELY ----------
+try:
+    with open(model_path, "rb") as f:
+        model = pickle.load(f)
+except Exception as e:
+    st.error(f"❌ Model loading failed: {e}")
+    st.stop()
 
-st.title("Loan Prediction App")
+try:
+    with open(encoder_path, "rb") as f:
+        encoders = pickle.load(f)
+except Exception as e:
+    st.error(f"❌ Encoder loading failed: {e}")
+    st.stop()
 
-# -------- USER INPUT --------
+# ---------- USER INPUT ----------
 gender = st.selectbox("Gender", ["Male", "Female"])
 married = st.selectbox("Married", ["Yes", "No"])
 education = st.selectbox("Education", ["Graduate", "Not Graduate"])
@@ -38,7 +55,7 @@ applicant_income = st.number_input("Applicant Income")
 loan_amount = st.number_input("Loan Amount")
 property_area = st.selectbox("Property Area", ["Urban", "Semiurban", "Rural"])
 
-# -------- PREDICTION --------
+# ---------- PREDICT ----------
 if st.button("Predict"):
 
     input_dict = {
@@ -53,12 +70,11 @@ if st.button("Predict"):
 
     input_df = pd.DataFrame([input_dict])
 
-    # Apply encoders
+    # Apply encoding safely
     for col in encoders:
         if col in input_df.columns:
             input_df[col] = encoders[col].transform(input_df[col])
 
-    # 🔥 IMPORTANT FIX (No features.pkl needed)
     input_df = input_df[model.feature_names_in_]
 
     prediction = model.predict(input_df)
