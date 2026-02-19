@@ -10,15 +10,26 @@ Original file is located at
 import streamlit as st
 import pandas as pd
 import pickle
+import os
 
-# Load saved files
-model = pickle.load(open("loan_prediction_model.pkl", "rb"))
-encoders = pickle.load(open("label_encoder.pkl", "rb"))
-feature_columns = pickle.load(open("features.pkl", "rb"))
+# -------- LOAD MODEL --------
+model_path = "loan_prediction_model.pkl"
+encoder_path = "label_encoder.pkl"
+
+if not os.path.exists(model_path):
+    st.error("Model file not found!")
+    st.stop()
+
+if not os.path.exists(encoder_path):
+    st.error("Encoder file not found!")
+    st.stop()
+
+model = pickle.load(open(model_path, "rb"))
+encoders = pickle.load(open(encoder_path, "rb"))
 
 st.title("Loan Prediction App")
 
-# User Inputs
+# -------- USER INPUT --------
 gender = st.selectbox("Gender", ["Male", "Female"])
 married = st.selectbox("Married", ["Yes", "No"])
 education = st.selectbox("Education", ["Graduate", "Not Graduate"])
@@ -27,10 +38,9 @@ applicant_income = st.number_input("Applicant Income")
 loan_amount = st.number_input("Loan Amount")
 property_area = st.selectbox("Property Area", ["Urban", "Semiurban", "Rural"])
 
-# When Predict Button Clicked
+# -------- PREDICTION --------
 if st.button("Predict"):
 
-    # Create dictionary
     input_dict = {
         "Gender": gender,
         "Married": married,
@@ -41,18 +51,16 @@ if st.button("Predict"):
         "Property_Area": property_area
     }
 
-    # Convert to DataFrame
     input_df = pd.DataFrame([input_dict])
 
-    # Apply Label Encoding
+    # Apply encoders
     for col in encoders:
-        if col != "Loan_Status":
+        if col in input_df.columns:
             input_df[col] = encoders[col].transform(input_df[col])
 
-    # Reorder columns SAME as training
-    input_df = input_df[feature_columns]
+    # 🔥 IMPORTANT FIX (No features.pkl needed)
+    input_df = input_df[model.feature_names_in_]
 
-    # Predict
     prediction = model.predict(input_df)
 
     if prediction[0] == 1:
