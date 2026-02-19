@@ -16,7 +16,7 @@ import joblib
 # -------------------------------
 try:
     model = joblib.load("loan_prediction_model.pkl")
-    encoders = joblib.load("encoders.pkl")
+    encoders = joblib.load("label_encoder.pkl")
 except Exception as e:
     st.error(f"Loading failed: {e}")
     st.stop()
