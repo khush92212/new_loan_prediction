@@ -46,12 +46,13 @@ if st.button("Predict"):
 
     try:
         # Encode inputs using saved encoders
-        gender_val = encoders["Gender"].transform([gender])[0]
-        married_val = encoders["Married"].transform([married])[0]
-        dependents_val = encoders["Dependents"].transform([dependents])[0]
-        education_val = encoders["Education"].transform([education])[0]
-        self_employed_val = encoders["Self_Employed"].transform([self_employed])[0]
-        property_val = encoders["Property_Area"].transform([property_area])[0]
+        gender_val = encoders["Gender"].transform([gender.lower().strip()])[0]
+        married_val = encoders["Married"].transform([married.lower().strip()])[0]
+        dependents_val = encoders["Dependents"].transform([dependents.lower().strip()])[0]
+        education_val = encoders["Education"].transform([education.lower().strip()])[0]
+        self_employed_val = encoders["Self_Employed"].transform([self_employed.lower().strip()])[0]
+        property_val = encoders["Property_Area"].transform([property_area.lower().strip()])[0]
+
 
         # Create dataframe in correct order
         input_data = pd.DataFrame([[ 
