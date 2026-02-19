@@ -1,56 +1,44 @@
 import pandas as pd
-import joblib
+import pickle
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder
 
 # Load dataset
-df = pd.read_csv("loan_data.csv")
+data = pd.read_csv("loan_data.csv")
 
-# Drop ID column
-df = df.drop("Loan_ID", axis=1)
+# Create Label Encoders dictionary
+label_encoders = {}
 
-# Split features & target
-X = df.drop("Loan_Status", axis=1)
-y = df["Loan_Status"]
+# Encode categorical columns
+categorical_columns = ['Gender', 'Married', 'Education', 'Self_Employed', 'Property_Area', 'Loan_Status']
 
-# Define categorical & numeric columns
-categorical_cols = [
-    "Gender",
-    "Married",
-    "Dependents",
-    "Education",
-    "Self_Employed",
-    "Property_Area"
-]
+for col in categorical_columns:
+    le = LabelEncoder()
+    data[col] = le.fit_transform(data[col])
+    label_encoders[col] = le
 
-numeric_cols = [
-    "ApplicantIncome",
-    "CoapplicantIncome",
-    "LoanAmount",
-    "Loan_Amount_Term",
-    "Credit_History"
-]
+# Define X and y
+X = data.drop('Loan_Status', axis=1)
+y = data['Loan_Status']
 
-# Preprocessing
-preprocessor = ColumnTransformer(
-    transformers=[
-        ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_cols)
-    ],
-    remainder="passthrough"
-)
+# Save feature names
+feature_columns = X.columns
 
-# Create pipeline
-model = Pipeline(steps=[
-    ("preprocessor", preprocessor),
-    ("classifier", RandomForestClassifier())
-])
+# Train test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train
-model.fit(X, y)
+# Train model
+model = RandomForestClassifier()
+model.fit(X_train, y_train)
 
 # Save model
-joblib.dump(model, "loan_prediction_model.pkl")
+pickle.dump(model, open("model.pkl", "wb"))
 
-print("Model trained successfully!")
+# Save encoders
+pickle.dump(label_encoders, open("encoders.pkl", "wb"))
+
+# Save feature columns
+pickle.dump(feature_columns, open("features.pkl", "wb"))
+
+print("Model and encoders saved successfully!")
