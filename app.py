@@ -12,11 +12,11 @@ import pandas as pd
 import joblib
 
 # Load trained model and encoders
-model = joblib.load("loan_prediction_model (1).pkl")          # your saved model
+# Note: Ensure these files are in the same directory as your app.py
+model = joblib.load("loan_prediction_model (1).pkl")
 encoder = joblib.load("label_encoder (1).pkl")
 
 st.title("🏦 Loan Approval Prediction App")
-
 st.write("Enter applicant details to check loan approval status")
 
 # User Inputs
@@ -26,14 +26,14 @@ dependents = st.selectbox("Dependents", encoder["Dependents"].classes_)
 education = st.selectbox("Education", encoder["Education"].classes_)
 self_employed = st.selectbox("Self_Employed", encoder["Self_Employed"].classes_)
 
-app_income = st.number_input("ApplicantIncome", min_value=0)
-coapp_income = st.number_input("CoapplicantIncome", min_value=0)
-loan_amount = st.number_input("LoanAmount", min_value=0)
-loan_term = st.number_input("Loan_Amount_Term", min_value=0)
-credit_history = st.selectbox("Credit_History", [1.0, 0.0])
-property_area = st.selectbox("Property_Area", encoder["Property_Area"].classes_)
+app_income = st.number_input("Applicant Income", min_value=0)
+coapp_income = st.number_input("Coapplicant Income", min_value=0)
+loan_amount = st.number_input("Loan Amount", min_value=0)
+loan_term = st.number_input("Loan Amount Term", min_value=0)
+credit_history = st.selectbox("Credit History", [1.0, 0.0])
+property_area = st.selectbox("Property Area", encoder["Property_Area"].classes_)
 
-# Create DataFrame
+# Create DataFrame - Ensure keys match the training data column names exactly
 df = pd.DataFrame({
     "Gender": [gender],
     "Married": [married],
@@ -44,16 +44,16 @@ df = pd.DataFrame({
     "CoapplicantIncome": [coapp_income],
     "LoanAmount": [loan_amount],
     "Loan_Amount_Term": [loan_term],
-    "Credit_History": [credit_history],
+    "Credit_History": [float(credit_history)], # Converted to float to match common model types
     "Property_Area": [property_area]
 })
 
-# Prediction
+# Prediction logic
 if st.button("Predict Loan Status"):
-
-    # Encode categorical columns
+    # FIX: Only encode columns that exist in BOTH the encoder and the input dataframe
     for col in encoder:
-        df[col] = encoder[col].transform(df[col])
+        if col in df.columns:
+            df[col] = encoder[col].transform(df[col])
 
     # Predict
     prediction = model.predict(df)
