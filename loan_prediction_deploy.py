@@ -11,46 +11,97 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# Load model
-model = joblib.load("loan_prediction_model.pkl")
-label = joblib.load("label_encoder.pkl")
+# -------------------------------
+# Load Model
+# -------------------------------
+try:
+    model = joblib.load("loan_prediction_model.pkl")
+except Exception as e:
+    st.error(f"Model loading failed: {e}")
+    st.stop()
 
-# Streamlit App
-
+# -------------------------------
+# App Title
+# -------------------------------
 st.title("Loan Prediction App")
 
+st.subheader("Enter Applicant Details")
+
+# -------------------------------
 # User Inputs
+# -------------------------------
 gender = st.selectbox("Gender", ["Male", "Female"])
 married = st.selectbox("Married", ["Yes", "No"])
 dependents = st.selectbox("Dependents", ["0", "1", "2", "3+"])
 education = st.selectbox("Education", ["Graduate", "Not Graduate"])
 self_employed = st.selectbox("Self Employed", ["Yes", "No"])
-applicant_income = st.number_input("Applicant Income", 0)
-coapplicant_income = st.number_input("Coapplicant Income", 0)
-loan_amount = st.number_input("Loan Amount", 0)
-loan_term = st.number_input("Loan Amount Term", 0)
+applicant_income = st.number_input("Applicant Income", min_value=0)
+coapplicant_income = st.number_input("Coapplicant Income", min_value=0)
+loan_amount = st.number_input("Loan Amount", min_value=0)
+loan_term = st.number_input("Loan Amount Term", min_value=0)
 credit_history = st.selectbox("Credit History", [1.0, 0.0])
 property_area = st.selectbox("Property Area", ["Urban", "Semiurban", "Rural"])
 
-# Create DataFrame
-df = pd.DataFrame({
-    "Gender": [gender],
-    "Married": [married],
-    "Dependents": [dependents],
-    "Education": [education],
-    "Self_Employed": [self_employed],
-    "ApplicantIncome": [applicant_income],
-    "CoapplicantIncome": [coapplicant_income],
-    "LoanAmount": [loan_amount],
-    "Loan_Amount_Term": [loan_term],
-    "Credit_History": [credit_history],
-    "Property_Area": [property_area]
-})
-
+# -------------------------------
+# Prediction Button
+# -------------------------------
 if st.button("Predict"):
-    prediction = model.predict(df)
 
-    if prediction[0] == 1:
-        st.success("Loan Approved")
-    else:
-        st.error("Loan Not Approved")
+    # -------------------------------
+    # Manual Encoding (MUST match training)
+    # -------------------------------
+    gender_val = 1 if gender == "Male" else 0
+    married_val = 1 if married == "Yes" else 0
+    education_val = 1 if education == "Graduate" else 0
+    self_employed_val = 1 if self_employed == "Yes" else 0
+    dependents_val = 3 if dependents == "3+" else int(dependents)
+
+    property_map = {
+        "Urban": 2,
+        "Semiurban": 1,
+        "Rural": 0
+    }
+    property_val = property_map[property_area]
+
+    # -------------------------------
+    # Create DataFrame in EXACT order
+    # -------------------------------
+    input_data = pd.DataFrame([[
+        gender_val,
+        married_val,
+        dependents_val,
+        education_val,
+        self_employed_val,
+        applicant_income,
+        coapplicant_income,
+        loan_amount,
+        loan_term,
+        credit_history,
+        property_val
+    ]], columns=[
+        "Gender",
+        "Married",
+        "Dependents",
+        "Education",
+        "Self_Employed",
+        "ApplicantIncome",
+        "CoapplicantIncome",
+        "LoanAmount",
+        "Loan_Amount_Term",
+        "Credit_History",
+        "Property_Area"
+    ])
+
+    # -------------------------------
+    # Make Prediction
+    # -------------------------------
+    try:
+        prediction = model.predict(input_data)
+
+        if prediction[0] == 1:
+            st.success("Loan Approved ")
+        else:
+            st.error("Loan Not Approved")
+
+    except Exception as e:
+        st.error(f"Prediction failed: {e}")
