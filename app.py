@@ -24,14 +24,14 @@ gender = st.selectbox("Gender", encoder["Gender"].classes_)
 married = st.selectbox("Married", encoder["Married"].classes_)
 dependents = st.selectbox("Dependents", encoder["Dependents"].classes_)
 education = st.selectbox("Education", encoder["Education"].classes_)
-self_employed = st.selectbox("Self Employed", encoder["Self_Employed"].classes_)
+self_employed = st.selectbox("Self_Employed", encoder["Self_Employed"].classes_)
 
-app_income = st.number_input("Applicant Income", min_value=0)
-coapp_income = st.number_input("Coapplicant Income", min_value=0)
-loan_amount = st.number_input("Loan Amount", min_value=0)
-loan_term = st.number_input("Loan Amount Term", min_value=0)
-credit_history = st.selectbox("Credit History", [1.0, 0.0])
-property_area = st.selectbox("Property Area", encoder["Property_Area"].classes_)
+app_income = st.number_input("ApplicantIncome", min_value=0)
+coapp_income = st.number_input("CoapplicantIncome", min_value=0)
+loan_amount = st.number_input("LoanAmount", min_value=0)
+loan_term = st.number_input("Loan_Amount_Term", min_value=0)
+credit_history = st.selectbox("Credit_History", [1.0, 0.0])
+property_area = st.selectbox("Property_Area", encoder["Property_Area"].classes_)
 
 # Create DataFrame
 df = pd.DataFrame({
