@@ -12,13 +12,12 @@ import pandas as pd
 import joblib
 
 # -------------------------------
-# Load Model & Encoders
+# Load Model
 # -------------------------------
 try:
     model = joblib.load("loan_prediction_model.pkl")
-    encoders = joblib.load("label_encoder.pkl")
 except Exception as e:
-    st.error(f"Loading failed: {e}")
+    st.error(f"Model loading failed: {e}")
     st.stop()
 
 st.title("Loan Prediction App")
@@ -45,13 +44,21 @@ property_area = st.selectbox("Property Area", ["Urban", "Semiurban", "Rural"])
 if st.button("Predict"):
 
     try:
-        # Clean input before encoding (IMPORTANT FIX)
-        gender_val = encoders["Gender"].transform([gender.strip().lower()])[0]
-        married_val = encoders["Married"].transform([married.strip().lower()])[0]
-        dependents_val = encoders["Dependents"].transform([dependents.strip().lower()])[0]
-        education_val = encoders["Education"].transform([education.strip().lower()])[0]
-        self_employed_val = encoders["Self_Employed"].transform([self_employed.strip().lower()])[0]
-        property_val = encoders["Property_Area"].transform([property_area.strip().lower()])[0]
+        # Manual Encoding (Safe Method)
+
+        gender_val = 1 if gender == "Male" else 0
+        married_val = 1 if married == "Yes" else 0
+        education_val = 1 if education == "Graduate" else 0
+        self_employed_val = 1 if self_employed == "Yes" else 0
+        dependents_val = 3 if dependents == "3+" else int(dependents)
+
+        property_map = {
+            "Urban": 2,
+            "Semiurban": 1,
+            "Rural": 0
+        }
+
+        property_val = property_map[property_area]
 
         input_data = pd.DataFrame([[ 
             gender_val,
@@ -85,10 +92,6 @@ if st.button("Predict"):
             st.success("Loan Approved ✅")
         else:
             st.error("Loan Not Approved ❌")
-
-    except ValueError as ve:
-        st.error("Input value does not match training data. Please check formatting.")
-        st.write(ve)
 
     except Exception as e:
         st.error(f"Prediction failed: {e}")
