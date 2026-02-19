@@ -16,7 +16,7 @@ import joblib
 # -------------------------------
 try:
     model = joblib.load("loan_prediction_model.pkl")
-    encoders = joblib.load("label_encoder.pkl")
+    encoders = joblib.load("encoders.pkl")
 except Exception as e:
     st.error(f"Loading failed: {e}")
     st.stop()
@@ -44,47 +44,51 @@ property_area = st.selectbox("Property Area", ["Urban", "Semiurban", "Rural"])
 # -------------------------------
 if st.button("Predict"):
 
-    # Use Saved LabelEncoders
-    gender_val = encoders["Gender"].transform([gender])[0]
-    married_val = encoders["Married"].transform([married])[0]
-    dependents_val = encoders["Dependents"].transform([dependents])[0]
-    education_val = encoders["Education"].transform([education])[0]
-    self_employed_val = encoders["Self_Employed"].transform([self_employed])[0]
-    property_val = encoders["Property_Area"].transform([property_area])[0]
-
-    input_data = pd.DataFrame([[ 
-        gender_val,
-        married_val,
-        dependents_val,
-        education_val,
-        self_employed_val,
-        applicant_income,
-        coapplicant_income,
-        loan_amount,
-        loan_term,
-        credit_history,
-        property_val
-    ]], columns=[
-        "Gender",
-        "Married",
-        "Dependents",
-        "Education",
-        "Self_Employed",
-        "ApplicantIncome",
-        "CoapplicantIncome",
-        "LoanAmount",
-        "Loan_Amount_Term",
-        "Credit_History",
-        "Property_Area"
-    ])
-
     try:
+        # Clean input before encoding (IMPORTANT FIX)
+        gender_val = encoders["Gender"].transform([gender.strip().lower()])[0]
+        married_val = encoders["Married"].transform([married.strip().lower()])[0]
+        dependents_val = encoders["Dependents"].transform([dependents.strip().lower()])[0]
+        education_val = encoders["Education"].transform([education.strip().lower()])[0]
+        self_employed_val = encoders["Self_Employed"].transform([self_employed.strip().lower()])[0]
+        property_val = encoders["Property_Area"].transform([property_area.strip().lower()])[0]
+
+        input_data = pd.DataFrame([[ 
+            gender_val,
+            married_val,
+            dependents_val,
+            education_val,
+            self_employed_val,
+            applicant_income,
+            coapplicant_income,
+            loan_amount,
+            loan_term,
+            credit_history,
+            property_val
+        ]], columns=[
+            "Gender",
+            "Married",
+            "Dependents",
+            "Education",
+            "Self_Employed",
+            "ApplicantIncome",
+            "CoapplicantIncome",
+            "LoanAmount",
+            "Loan_Amount_Term",
+            "Credit_History",
+            "Property_Area"
+        ])
+
         prediction = model.predict(input_data)
 
         if prediction[0] == 1:
             st.success("Loan Approved ✅")
         else:
             st.error("Loan Not Approved ❌")
+
+    except ValueError as ve:
+        st.error("Input value does not match training data. Please check formatting.")
+        st.write(ve)
 
     except Exception as e:
         st.error(f"Prediction failed: {e}")
